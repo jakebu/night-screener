@@ -6,13 +6,17 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from ta.trend import EMAIndicator, MACD
 from ta.momentum import RSIIndicator
-import os
+import os, boto3
 
 app = Flask(__name__)
-API_KEY = 'xdnUr7m4klqE5LOoaVnKzBBdTtUjZzpz'
+ssm_name = os.getenv("POLYGON_API_PARAM","/signals/POLYGON_API_KEY")
+api_key = os.getenv("POLYGON_API_KEY")
+if not api_key:
+    ssm = boto3.client("ssm")
+    api_key = ssm.get_parameter(Name=ssm_name, WithDecryption=True)["Parameter"]["Value"]
 
 def fetch_polygon_bars(ticker, start_date, end_date, multiplier=1, timespan='day'):
-    url = f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{start_date}/{end_date}?adjusted=true&sort=asc&apiKey={API_KEY}"
+    url = f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{start_date}/{end_date}?adjusted=true&sort=asc&apiKey={api_key}"
     r = requests.get(url)
     r.raise_for_status()
     data = r.json()

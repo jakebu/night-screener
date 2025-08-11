@@ -5,16 +5,22 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from ta.trend import EMAIndicator, MACD
 from ta.momentum import RSIIndicator
+import os, boto3
 
 # === CONFIGURATION ===
-API_KEY = 'xdnUr7m4klqE5LOoaVnKzBBdTtUjZzpz'  # <-- Replace with your real API key
+
+ssm_name = os.getenv("POLYGON_API_PARAM","/signals/POLYGON_API_KEY")
+api_key = os.getenv("POLYGON_API_KEY")
+if not api_key:
+    ssm = boto3.client("ssm")
+    api_key = ssm.get_parameter(Name=ssm_name, WithDecryption=True)["Parameter"]["Value"]
 TICKER = 'TSLA'
 START_DATE = '2023-01-01'
 END_DATE = datetime.now().strftime('%Y-%m-%d')
 
 
 def fetch_polygon_bars(ticker, multiplier=1, timespan='day'):
-    url = f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{START_DATE}/{END_DATE}?adjusted=true&sort=asc&apiKey={API_KEY}"
+    url = f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{START_DATE}/{END_DATE}?adjusted=true&sort=asc&apiKey={api_key}"
     r = requests.get(url)
     r.raise_for_status()
     data = r.json()
