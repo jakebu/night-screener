@@ -1,5 +1,5 @@
 import logging
-import os
+import os, boto3
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -22,14 +22,18 @@ logging.basicConfig(
     ]
 )
 
-API_KEY = 'xdnUr7m4klqE5LOoaVnKzBBdTtUjZzpz'
+ssm_name = os.getenv("POLYGON_API_PARAM","/signals/POLYGON_API_KEY")
+api_key = os.getenv("POLYGON_API_KEY")
+if not api_key:
+    ssm = boto3.client("ssm")
+    api_key = ssm.get_parameter(Name=ssm_name, WithDecryption=True)["Parameter"]["Value"]
 
 tickers = ['SPY', 'QQQ', 'PLTR', 'DASH', 'CRCL', 'CRWV', 'AMD', 'USO', 'AMZN', 'SMCI', 'NVDA', 'QUBT', 'ASTS', 'DKNG', 'PYPL', 'DHI', 'HD', 'TSLA', 'IBIT', 'USO', 'MSFT','IWM','META','RKLB','AMZN','NBIS','SPHR','RDW','CRWD','DELL','ORCL','GSRT']
 
 def fetch_polygon_bars(ticker, multiplier=1, timespan='day', limit=500):
     url = f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/" \
           f"{(pd.Timestamp.now() - pd.Timedelta(days=350)).strftime('%Y-%m-%d')}/" \
-          f"{pd.Timestamp.now().strftime('%Y-%m-%d')}?adjusted=true&sort=asc&limit={500}&apiKey={API_KEY}"
+          f"{pd.Timestamp.now().strftime('%Y-%m-%d')}?adjusted=true&sort=asc&limit={500}&apiKey={api_key}"
     
     r = requests.get(url)
     if r.status_code != 200:
